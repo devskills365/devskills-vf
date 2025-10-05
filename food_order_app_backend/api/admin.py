@@ -3,13 +3,15 @@ from flask import Blueprint, request, jsonify
 from extensions import db 
 from models.restaurant import Restaurant
 from models.plat import Plat
-# api/admin.py (suite)
 from sqlalchemy import func, case
 from models.client import Client
 from models.detail_commande import DetailCommande
 from models.plat import Plat
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime
+from models.commande import Commande
+from models.detail_commande import DetailCommande
+from models.plat import Plat
+from models.client import Client
+from sqlalchemy import func, extract, case
 # Ajoutez d'autres imports de modèles et services au besoin
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api/v1/admin')
@@ -296,3 +298,69 @@ def get_commandes_restaurant(restaurant_id):
     
     # Sérialisation : l'erreur devrait être résolue si la relation 'plat' existe maintenant
     return jsonify([commande_to_dict(c) for c in commandes_en_cours]), 200
+
+
+
+
+
+@admin_bp.route('/restaurants/<int:restaurant_id>/stats/<int:annee>/<int:mois>', methods=['GET'])
+def get_monthly_stats(restaurant_id, annee, mois):
+    
+    try:
+        # Filtrer sur le mois, l'année et le restaurant ID pour toutes les requêtes
+        filtre_base = [
+            Commande.restaurant_id == restaurant_id,
+            extract('year', Commande.date_commande) == annee,
+            extract('month', Commande.date_commande) == mois
+        ]
+
+        # A. Chiffre d'affaires par jour (pour le graphe)
+        # On regroupe par jour (date seule) pour les commandes LIVRÉES
+        ventes_par_jour_query = db.session.query(
+            func.date(Commande.date_commande).label('jour'),
+            func.sum(DetailCommande.prix_unitaire * DetailCommande.quantite).label('montant_total')
+        ).join(DetailCommande, Commande.id == DetailCommande.commande_id).filter(
+            *filtre_base, # Utilise le filtre du mois/année/restaurant
+            Commande.statut == 'LIVREE'
+        ).group_by(func.date(Commande.date_commande)).order_by(func.date(Commande.date_commande)).all()
+
+        ventes_par_jour = [
+            {'jour': str(jour), 'montant': float(montant)} 
+            for jour, montant in ventes_par_jour_query
+        ]
+
+        # B. Nombre de commandes (Total, Validées/Livré, Annulées)
+        compteurs_query = db.session.query(
+            func.count(Commande.id).label('total'),
+            func.sum(case((Commande.statut == 'LIVREE', 1), else_=0)).label('validees'),
+            func.sum(case((Commande.statut == 'ANNULEE', 1), else_=0)).label('annulees')
+        ).filter(*filtre_base).one()
+        
+        compteurs = {
+            'total_commandes': int(compteurs_query.total),
+            'commandes_validees': int(compteurs_query.validees),
+            'commandes_annulees': int(compteurs_query.annulees),
+        }
+        
+        # C. Plats les plus consommés (Top 5 des commandes LIVRÉES)
+        top_plats_query = db.session.query(
+            Plat.nom,
+            func.sum(DetailCommande.quantite).label('total_quantite')
+        ).join(DetailCommande, Plat.id == DetailCommande.plat_id).join(Commande, DetailCommande.commande_id == Commande.id).filter(
+            *filtre_base,
+            Commande.statut == 'LIVREE'
+        ).group_by(Plat.nom).order_by(func.sum(DetailCommande.quantite).desc()).limit(5).all()
+
+        top_plats = [{'nom': nom, 'quantite': int(quantite)} for nom, quantite in top_plats_query]
+
+
+        return jsonify({
+            "message": f"Statistiques pour {mois}/{annee} générées avec succès.",
+            "ventes_par_jour": ventes_par_jour,
+            "compteurs": compteurs,
+            "top_plats": top_plats,
+        }), 200
+
+    except Exception as e:
+        print(f"Erreur lors de la récupération des stats mensuelles: {e}")
+        return jsonify({"message": f"Erreur serveur interne lors du calcul des statistiques : {e}"}), 500

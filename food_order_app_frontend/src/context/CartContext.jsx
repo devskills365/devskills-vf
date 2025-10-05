@@ -1,4 +1,4 @@
-// src/context/CartContext.jsx
+// src/context/CartContext.jsx (Ajouter/Modifier ceci)
 import React, { createContext, useState, useContext } from 'react';
 
 // 1. Création du Contexte
@@ -13,26 +13,40 @@ const calculateTotal = (items) => {
 export const CartProvider = ({ children }) => {
     const [cartItems, setCartItems] = useState([]);
 
-    // Fonction pour ajouter ou mettre à jour un plat dans le panier
+    // Fonction pour ajouter ou mettre à jour un plat dans le panier (celle-ci est déjà bonne)
     const addItemToCart = (plat, quantite = 1) => {
         setCartItems(prevItems => {
-            // Chercher si le plat existe déjà
             const existingItemIndex = prevItems.findIndex(item => item.id === plat.id);
 
             if (existingItemIndex > -1) {
-                // Si le plat existe, mise à jour de la quantité
                 const newItems = [...prevItems];
                 newItems[existingItemIndex].quantite += quantite;
                 return newItems;
             } else {
-                // Sinon, ajout du nouveau plat
                 return [...prevItems, { 
                     ...plat, 
                     quantite: quantite,
-                    // Assurez-vous que le prix est un nombre flottant
                     prix: parseFloat(plat.prix) 
                 }];
             }
+        });
+    };
+
+    // NOUVELLE FONCTION : Mettre à jour la quantité
+    const updateItemQuantity = (platId, newQuantity) => {
+        setCartItems(prevItems => {
+            if (newQuantity <= 0) {
+                // Si la nouvelle quantité est <= 0, retire l'article
+                return prevItems.filter(item => item.id !== platId);
+            }
+
+            return prevItems.map(item => {
+                if (item.id === platId) {
+                    // Sinon, met à jour la quantité
+                    return { ...item, quantite: newQuantity };
+                }
+                return item;
+            });
         });
     };
 
@@ -54,12 +68,11 @@ export const CartProvider = ({ children }) => {
             value={{ 
                 cartItems, 
                 addItemToCart, 
-                removeItemFromCart, 
+                removeItemFromCart,
+                updateItemQuantity, // <--- Exportez la nouvelle fonction
                 clearCart, 
                 total,
                 totalItems,
-                // Note: Nous stockons le restaurantId du premier plat ajouté 
-    
                 restaurantId: cartItems.length > 0 ? cartItems[0].restaurant_id : null 
             }}
         >

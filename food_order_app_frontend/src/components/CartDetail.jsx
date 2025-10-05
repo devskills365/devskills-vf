@@ -1,9 +1,9 @@
-// src/components/CartDetail.jsx (Mise à jour pour être responsive)
+// src/components/CartDetail.jsx (Mise à jour)
 import React from 'react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 
-// Fonction de formatage du prix
+// Fonction de formatage du prix (inchangée)
 const formatPrice = (price) => {
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
@@ -13,15 +13,31 @@ const formatPrice = (price) => {
 
 // --- Composant Principal CartDetail ---
 const CartDetail = () => {
-    const { cartItems, total, totalItems } = useCart();
+    // 1. Importer la fonction updateItemQuantity
+    const { cartItems, total, totalItems, removeItemFromCart, updateItemQuantity } = useCart();
     const formattedTotal = formatPrice(total);
 
-    // Ne rien afficher si le panier est vide
+    // Handler pour retirer complètement un article
+    const handleRemoveItem = (itemId) => {
+        removeItemFromCart(itemId);
+    };
+
+    // Handler pour augmenter la quantité
+    const handleIncrease = (itemId, currentQuantity) => {
+        updateItemQuantity(itemId, currentQuantity + 1);
+    };
+
+    // Handler pour diminuer la quantité (retire l'article si la quantité atteint 0)
+    const handleDecrease = (itemId, currentQuantity) => {
+        updateItemQuantity(itemId, currentQuantity - 1);
+    };
+
+    // Ne rien afficher si le panier est vide (inchangé)
     if (totalItems === 0) {
         return null;
     }
 
-    // 1. Affichage pour Mobile (Mode Résumé/Flottant)
+    // ... (MobileSummary reste inchangé) ...
     const MobileSummary = (
         <div className="fixed bottom-0 left-0 w-full bg-indigo-800 p-4 shadow-2xl z-50 lg:hidden">
             <div className="container mx-auto flex justify-between items-center">
@@ -57,21 +73,49 @@ const CartDetail = () => {
                     <div key={item.id} className="flex justify-between items-center border-b last:border-b-0 py-2">
                         <div className="flex-grow">
                             <p className="font-semibold text-gray-700">{item.nom}</p>
-                            <p className="text-sm text-gray-500">
-                                {formatPrice(item.prix)} x {item.quantite}
-                            </p>
+                            
+                            {/* NOUVEAU: Contrôles de quantité */}
+                            <div className="flex items-center space-x-2 mt-1">
+                                <button
+                                    onClick={() => handleDecrease(item.id, item.quantite)}
+                                    className="p-1 border border-gray-300 rounded text-gray-600 hover:bg-gray-100 transition"
+                                    aria-label={`Diminuer la quantité de ${item.nom}`}
+                                >
+                                    {/* Si quantité > 1, affiche "-", sinon la poubelle pour supprimer à 1 */}
+                                    {item.quantite > 1 ? (
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path></svg>
+                                    ) : (
+                                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    )}
+                                </button>
+                                
+                                <span className="text-md font-medium text-gray-700 w-5 text-center">{item.quantite}</span>
+                                
+                                <button
+                                    onClick={() => handleIncrease(item.id, item.quantite)}
+                                    className="p-1 border border-gray-300 rounded text-gray-600 hover:bg-gray-100 transition"
+                                    aria-label={`Augmenter la quantité de ${item.nom}`}
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                </button>
+                            </div>
+                            {/* FIN Contrôles de quantité */}
+
                         </div>
                         <div className="flex items-center space-x-2">
-                            {/* TODO: Boutons +/- pour ajuster la quantité (Étape future) */}
                             <span className="font-bold text-indigo-600">
                                 {formatPrice(item.prix * item.quantite)}
                             </span>
+                            
+                            {/* REMPLACEMENT: Le bouton de suppression complet est maintenant géré par le bouton '-' lorsque quantite = 1 */}
+                            {/* Le bouton de suppression initial a été retiré ici pour éviter la redondance. */}
+                            
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Séparateur et Total */}
+            {/* Séparateur et Total (inchangé) */}
             <div className="mt-6 pt-4 border-t-2">
                 <div className="flex justify-between items-center mb-4">
                     <span className="text-xl font-bold text-gray-800">Total :</span>
@@ -80,7 +124,7 @@ const CartDetail = () => {
                     </span>
                 </div>
 
-                {/* Bouton de Commande */}
+                {/* Bouton de Commande (inchangé) */}
                 <Link 
                     to="/checkout" 
                     className="w-full block text-center px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150"

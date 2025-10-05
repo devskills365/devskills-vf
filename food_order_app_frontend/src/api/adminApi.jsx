@@ -58,3 +58,14 @@ export const updateCommandeStatut = async (commandeId, restaurantId, newStatut) 
         throw new Error(error.response?.data?.message || "Échec de la mise à jour du statut.");
     }
 };
+
+
+export const fetchMonthlyStats = async (restaurantId, annee, mois) => {
+    try {
+        const response = await API.get(`/admin/restaurants/${restaurantId}/stats/${annee}/${mois}`);
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la récupération des statistiques:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || "Impossible de charger les statistiques.");
+    }
+}
