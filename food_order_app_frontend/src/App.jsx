@@ -9,6 +9,7 @@ import MenuPage from './pages/client/MenuPage';
 import CheckoutPage from './pages/client/CheckoutPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import SuiviCommandePage from './pages/common/SuiviCommandePage';
+import AdminDashboard from './pages/admin/AdminDashboard'; 
 
 function App() {
   return (
@@ -22,8 +23,11 @@ function App() {
         {/* 2. Route Publique : Suivi de Commande */}
         <Route path="/suivi" element={<SuiviCommandePage />} />
 
-        {/* 3. Route Admin : Connexion */}
-        <Route path="/admin" element={<AdminLoginPage />} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+        
+        {/* 2. Tableau de Bord Admin (l'ID est passé dynamiquement après connexion) */}
+        <Route path="/admin/dashboard/:restaurantId" element={<AdminDashboard />} />
+
 
         {/* 4. Redirection par défaut (vers le menu du restaurant de test ID 1) */}
         <Route path="/" element={<Navigate to="/menu/1" replace />} />

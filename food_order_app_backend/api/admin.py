@@ -15,12 +15,6 @@ from datetime import datetime
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api/v1/admin')
 
 
-# Étape 9.1: Route de test simple (GET)
-@admin_bp.route('/', methods=['GET'])
-def index():
-    return jsonify({"message": "Bienvenue sur l'API Admin."}), 200
-
-
 
 # Fonction utilitaire pour sérialiser un Plat
 def plat_to_dict(plat):
@@ -52,7 +46,6 @@ def create_plat():
     
     # 3. Création de l'objet Plat
     try:
-        # Assurez-vous que le prix est un nombre valide
         prix_float = float(data['prix']) 
         
         new_plat = Plat(
@@ -68,7 +61,6 @@ def create_plat():
         db.session.commit()
         
         return jsonify({"message": "Plat créé avec succès.", "plat": plat_to_dict(new_plat)}), 201
-        
     except ValueError:
         db.session.rollback()
         return jsonify({"message": "Le prix doit être un nombre valide."}), 400
@@ -77,18 +69,21 @@ def create_plat():
         # Ici, l'IntegrityError est gérée par la vérification initiale, mais on la garde au cas où
         return jsonify({"message": f"Erreur serveur lors de la création du plat: {e}"}), 500
 # GET: Lister tous les plats d'un restaurant
+
+
+
 @admin_bp.route('/restaurants/<int:restaurant_id>/plats', methods=['GET'])
 def get_plats(restaurant_id):
-    plats = Plat.query.filter_by(restaurant_id=restaurant_id).all()
     
+    print('restaurant ID',restaurant_id)
+    plats = Plat.query.filter_by(restaurant_id=restaurant_id).all()
     if not plats:
         return jsonify({"message": "Aucun plat trouvé pour ce restaurant."}), 404
-    
     return jsonify([plat_to_dict(p) for p in plats]), 200
 
-# PUT: Modifier un plat existant
+
+
 @admin_bp.route('/plats/<int:plat_id>', methods=['PUT'])
-# @token_required
 def update_plat(plat_id):
     plat = Plat.query.get_or_404(plat_id)
     data = request.get_json()
@@ -193,8 +188,7 @@ def update_commande_statut(commande_id):
 
 
 
-# GET: Générer les statistiques de base pour un restaurant
-# Endpoint : GET /api/v1/admin/restaurants/{restaurant_id}/stats
+
 @admin_bp.route('/restaurants/<int:restaurant_id>/stats', methods=['GET'])
 def get_stats(restaurant_id):
     
@@ -239,3 +233,66 @@ def get_stats(restaurant_id):
         "clients_reguliers_count": len(clients_reguliers),
         "clients_reguliers_details": clients_reguliers
     }), 200
+
+
+# Dans api/admin.py, après plat_to_dict et avant les routes
+
+def detail_commande_to_dict(detail):
+    """Sérialise un objet DetailCommande, accédant au nom du plat via la relation 'plat'."""
+    # NOTE: Ceci suppose qu'une relation 'plat' est définie dans le modèle DetailCommande,
+    # ou que le Plat est joint et disponible via l'objet detail.
+    return {
+        # Assurez-vous que l'accès à `detail.plat.nom` est possible.
+        # Sinon, vous devrez joindre Plat explicitement dans la requête.
+        "plat_nom": detail.plat.nom, 
+        "quantite": detail.quantite,
+        # Conversion en chaîne de caractères pour éviter les problèmes de sérialisation JSON
+        "prix_unitaire": str(detail.prix_unitaire) 
+    }
+
+def commande_to_dict(commande):
+    """Sérialise un objet Commande, incluant les détails et le client."""
+    
+    # Client est supposé être joint ou accessible via relation si nécessaire,
+    # mais une requête get() est plus fiable si la relation n'est pas chargée.
+    client = Client.query.get(commande.client_id)
+    
+    # Calculer le total à partir des détails de la commande
+    # Numeric doit être converti en float ou Decimal pour les calculs Python
+    total_estime = sum(d.quantite * float(d.prix_unitaire) for d in commande.details)
+    
+    return {
+        "id": commande.id,
+        "code_commande": commande.code_commande,
+        "statut": commande.statut,
+        "mode_recuperation": commande.mode_recuperation,
+        # Utiliser `isoformat()` pour que la date soit lisible en JavaScript
+        "date_commande": commande.date_commande.isoformat(), 
+        "client_nom": client.nom if client else "Client Inconnu",
+        "client_telephone": client.telephone if client else "N/A",
+        "total_estime": f"{total_estime:.2f}", # Formater à deux décimales
+        "articles": [detail_commande_to_dict(d) for d in commande.details]
+    }
+
+
+
+@admin_bp.route('/restaurants/<int:restaurant_id>/commandes', methods=['GET'])
+def get_commandes_restaurant(restaurant_id):
+    
+    print('FLASK: Route COMMANDES ATTEINTE. ID:', restaurant_id)
+    
+    # Nouvelle requête optimisée pour l'eager loading avec .selectinload()
+    # Ceci nécessite que les relations soient définies dans les modèles (Commande.details, DetailCommande.plat, Commande.client)
+    commandes_en_cours = db.session.query(Commande).options(
+        db.selectinload(Commande.details).selectinload(DetailCommande.plat),
+        db.selectinload(Commande.client)
+    ).filter(
+        Commande.restaurant_id == restaurant_id,
+        Commande.statut.in_(['NOUVELLE', 'EN_PREPARATION', 'PRETE']) 
+    ).order_by(Commande.date_commande.asc()).all()
+
+    if not commandes_en_cours:
+        return jsonify({"message": "Aucune commande en cours trouvée pour ce restaurant."}), 404
+    
+    # Sérialisation : l'erreur devrait être résolue si la relation 'plat' existe maintenant
+    return jsonify([commande_to_dict(c) for c in commandes_en_cours]), 200

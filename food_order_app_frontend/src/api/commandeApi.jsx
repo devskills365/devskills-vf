@@ -1,4 +1,4 @@
-// src/api/commandeApi.js
+// src/api/commandeApi.jsx
 import axios from 'axios';
 import API_BASE_URL from './config';
 

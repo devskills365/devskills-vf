@@ -59,7 +59,7 @@ export const CartProvider = ({ children }) => {
                 total,
                 totalItems,
                 // Note: Nous stockons le restaurantId du premier plat ajouté 
-                // pour s'assurer que l'utilisateur ne commande pas dans deux restaurants différents.
+    
                 restaurantId: cartItems.length > 0 ? cartItems[0].restaurant_id : null 
             }}
         >

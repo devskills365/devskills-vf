@@ -1,4 +1,5 @@
-# models/detail_commande.py
+# models/detail_commande.py (Version corrigée)
+
 from extensions import db 
 from sqlalchemy import Numeric
 
@@ -12,10 +13,14 @@ class DetailCommande(db.Model):
     plat_id = db.Column(db.Integer, db.ForeignKey('plats.id'), nullable=False)
     
     quantite = db.Column(db.Integer, default=1)
-    # Prix du plat au moment de la commande (important pour l'historique)
     prix_unitaire = db.Column(Numeric(precision=10, scale=2), nullable=False) 
 
-    # Contrainte pour éviter qu'un même plat soit listé deux fois dans les détails de la même commande
+    # ➡️ AJOUTEZ CETTE LIGNE : DÉFINITION DE LA RELATION VERS LE MODÈLE PLAT
+    # Ceci crée l'attribut 'plat' sur chaque objet DetailCommande
+    plat = db.relationship('Plat', backref='detail_commandes')
+    # Assurez-vous d'avoir 'Plat' importé dans le fichier où la Base est déclarée si nécessaire,
+    # mais 'Plat' comme chaîne de caractères devrait fonctionner si Plat est importé ailleurs.
+
     __table_args__ = (db.UniqueConstraint('commande_id', 'plat_id', name='_commande_plat_uc'),)
 
     def __repr__(self):

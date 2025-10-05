@@ -29,10 +29,6 @@ def seed_data():
             )
             db.session.add(r1)
             db.session.flush() # CRUCIAL : L'objet r1 est créé, son ID est généré.
-
-            # LIGNE SUPPRIMÉE : r1.matricule = generer_matricule(r1)
-            # Le matricule a été généré dans le __init__ du modèle et est prêt à être persisté.
-            
             # --- 2. Création des plats ---
             plat1 = Plat(restaurant_id=r1.id, nom="Burger Standard", prix=12.50, description="Le classique.", disponible=True)
             plat2 = Plat(restaurant_id=r1.id, nom="Wrap Végétarien", prix=9.90, description="Option saine.", disponible=True)
