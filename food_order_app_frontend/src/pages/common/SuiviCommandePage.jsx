@@ -28,8 +28,6 @@ const SuiviCommandePage = () => {
         
         // Simuler l'appel API de suivi
         if (inputCode) {
-            // Ici, vous feriez l'appel API pour charger les détails de la commande
-            // Une fois réussi, mettez à jour le code et le statut
             setCode(inputCode); 
             setLoading(false);
         } else {

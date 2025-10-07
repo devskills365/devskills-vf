@@ -138,8 +138,8 @@ const RestaurantStats = () => {
                                     <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="jour" tickFormatter={(tick) => tick.substring(5)} /> 
-                                        <YAxis label={{ value: 'Montant (€)', angle: -90, position: 'insideLeft' }} />
-                                        <Tooltip formatter={(value) => `${value.toFixed(2)} €`} />
+                                        <YAxis label={{ value: 'Montant (CFA)', angle: -90, position: 'insideLeft' }} />
+                                        <Tooltip formatter={(value) => `${value.toFixed(2)} CFA`} />
                                         <Legend />
                                         <Bar dataKey="montant" fill="#4f46e5" name="Ventes Jour" />
                                     </BarChart>

@@ -12,6 +12,8 @@ from models.detail_commande import DetailCommande
 from models.plat import Plat
 from models.client import Client
 from sqlalchemy import func, extract, case
+import os # Ajouter l'import si vous stockez localement
+from werkzeug.utils import secure_filename # Ajouter l'import
 # Ajoutez d'autres imports de modèles et services au besoin
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api/v1/admin')
@@ -31,32 +33,45 @@ def plat_to_dict(plat):
     }
 
 
+# api/admin.py (Remplacer la route existante)
+
+# Endpoint : POST /api/v1/admin/plats
 @admin_bp.route('/plats', methods=['POST'])
 def create_plat():
-    data = request.get_json()
-    
-    # 1. Validation des données requises (incluant restaurant_id)
+    # Dans Flask, pour les uploads de fichiers, les données de formulaire sont dans request.form
+    # et les fichiers dans request.files
+    data = request.form
+    image_file = request.files.get('image') # Nom du champ de fichier
+
+    # 1. Validation des données requises
     if not all(k in data for k in ('nom', 'prix', 'restaurant_id')):
         return jsonify({"message": "Données de plat manquantes (nom, prix, restaurant_id sont requis)."}), 400
     
     restaurant_id = data['restaurant_id']
-    
+    prix_str = data['prix']
 
     restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
         return jsonify({"message": f"Erreur d'autorisation : Le Restaurant ID {restaurant_id} n'existe pas."}), 401
-    
+    # Gestion de l'upload d'image
+    photo_url = data.get('photo_url') 
+    if image_file:
+        filename = secure_filename(image_file.filename)
+        # Pour l'exemple, nous construisons une URL simulée
+        photo_url = f"/uploads/plats/{filename}" 
     # 3. Création de l'objet Plat
     try:
-        prix_float = float(data['prix']) 
+        prix_float = float(prix_str)
+        disponible_str = data.get('disponible', 'true').lower()
+        disponible_bool = disponible_str in ('true', '1', 'oui')
         
         new_plat = Plat(
             nom=data['nom'],
             prix=prix_float,
-            restaurant_id=restaurant_id, # Utilisation de l'ID vérifié
+            restaurant_id=restaurant_id,
             description=data.get('description'),
-            photo_url=data.get('photo_url'),
-            disponible=data.get('disponible', True)
+            photo_url=photo_url,
+            disponible=disponible_bool
         )
         
         db.session.add(new_plat)
@@ -68,9 +83,10 @@ def create_plat():
         return jsonify({"message": "Le prix doit être un nombre valide."}), 400
     except Exception as e:
         db.session.rollback()
-        # Ici, l'IntegrityError est gérée par la vérification initiale, mais on la garde au cas où
         return jsonify({"message": f"Erreur serveur lors de la création du plat: {e}"}), 500
-# GET: Lister tous les plats d'un restaurant
+
+
+
 
 
 
@@ -148,11 +164,6 @@ def admin_login():
         "restaurant_id": restaurant.id,
         "restaurant_nom": restaurant.nom
     }), 200
-
-
-
-# api/admin.py (suite)
-from models.commande import Commande
 
 # Liste des statuts valides pour validation
 STATUTS_VALIDE = ['NOUVELLE', 'EN_PREPARATION', 'PRETE', 'LIVREE']

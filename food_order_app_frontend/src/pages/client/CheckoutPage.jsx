@@ -8,7 +8,7 @@ import { postCommande } from '../../api/commandeApi';
 const formatPrice = (price) => {
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
-        currency: 'EUR',
+        currency: 'CFA',
     }).format(price);
 };
 
@@ -18,7 +18,7 @@ const CheckoutPage = () => {
     const { cartItems, total, restaurantId: contextRestaurantId, clearCart, totalItems } = useCart();
 
     // S'assurer d'avoir un restaurantId (3 est forcé pour le test/le débogage)
-    const restaurantId = contextRestaurantId || 3; 
+    const restaurantId = contextRestaurantId; 
 
     // États du formulaire
     const [formData, setFormData] = useState({
@@ -125,32 +125,18 @@ const CheckoutPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label htmlFor="client_nom" className="block text-sm font-medium text-gray-700">Nom</label>
+                            <label htmlFor="client_nom" className="block text-sm font-medium text-gray-700">Numéro de la table</label>
                             <input 
                                 type="text" 
                                 name="client_nom" 
                                 id="client_nom" 
                                 value={formData.client_nom}
                                 onChange={handleChange}
-                                required
+                              
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
                                 disabled={loading}
                             />
                         </div>
-                        <div>
-                            <label htmlFor="client_telephone" className="block text-sm font-medium text-gray-700">Téléphone</label>
-                            <input 
-                                type="tel" 
-                                name="client_telephone" 
-                                id="client_telephone" 
-                                value={formData.client_telephone}
-                                onChange={handleChange}
-                                required
-                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
-                                disabled={loading}
-                            />
-                        </div>
-
                         <div>
                             <label htmlFor="mode_recuperation" className="block text-sm font-medium text-gray-700">Mode de Récupération</label>
                             <select

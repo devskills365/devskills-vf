@@ -1,5 +1,5 @@
 # api/client.py
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify,session
 from extensions import db 
 from models.restaurant import Restaurant
 from models.plat import Plat
@@ -9,7 +9,6 @@ from models.client import Client
 from models.commande import Commande
 from models.detail_commande import DetailCommande
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import Numeric # Nécessaire pour les opérations de prix
 logging.basicConfig(level=logging.ERROR)
 client_bp = Blueprint('client_bp', __name__, url_prefix='/api/v1/client')
 
@@ -34,18 +33,24 @@ def index():
 # Endpoint : GET /api/v1/client/restaurants/{restaurant_id}/menu
 @client_bp.route('/restaurants/<int:restaurant_id>/menu', methods=['GET'])
 def get_menu_public(restaurant_id):
-    
+    print('id restaurant',restaurant_id)
     # 1. Vérifier l'existence du restaurant
     if not Restaurant.query.get(restaurant_id):
         return jsonify({"message": "Restaurant non trouvé."}), 404
-        
+    
+     # ✅ 2. Enregistrer restaurant_id dans la session
+    session['restaurant_id'] = restaurant_id
+    
     # 2. Filtrer par restaurant ET par disponibilité (disponible=True)
     plats = Plat.query.filter_by(restaurant_id=restaurant_id, disponible=True).all()
     
     if not plats:
         return jsonify({"message": "Le menu est temporairement indisponible ou vide."}), 404
     
-    return jsonify([plat_to_dict_public(p) for p in plats]), 200
+    return jsonify({
+        "restaurant_id": restaurant_id,
+        "plats": [plat_to_dict_public(p) for p in plats]
+    }), 200
 
 
 # api/client.py (suite)

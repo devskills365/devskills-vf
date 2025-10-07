@@ -27,9 +27,12 @@ const CommandeCard = ({ commande, handleStatutUpdate }) => {
             </div>
 
             <p className="text-sm text-gray-600 mb-3">
-                Client: **{commande.client_nom}** |
-                Tél: {commande.client_telephone} |
-                Récupération: **{commande.mode_recuperation.replace('_', ' ')}**
+                                    <div>
+                    Numéro de table: <strong>{commande.client_nom}</strong>
+                    </div>
+                    <div>
+                    Récupération: <strong>{commande.mode_recuperation.replace('_', ' ')}</strong>
+                    </div>
             </p>
 
             <ul className="space-y-1 text-gray-700 border-t pt-3">
