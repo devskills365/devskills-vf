@@ -29,7 +29,7 @@ export const createPlat = async (platData) => {
         if (platData.photo_url) formData.append('photo_url', platData.photo_url);
         formData.append('disponible', platData.disponible.toString());
 
-        const response = await API.post('/api/v1/admin/plats', formData, {
+        const response = await API.post('/admin/plats', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -44,7 +44,7 @@ export const createPlat = async (platData) => {
 // Mettre à jour un plat existant
 export const updatePlat = async (platId, platData) => {
     try {
-        const response = await API.put(`/api/v1/admin/plats/${platId}`, platData);
+        const response = await API.put(`/admin/plats/${platId}`, platData);
         return response.data.plat;
     } catch (error) {
         console.error("Erreur lors de la mise à jour du plat:", error);
@@ -55,7 +55,7 @@ export const updatePlat = async (platId, platData) => {
 // Supprimer un plat
 export const deletePlat = async (platId) => {
     try {
-        const response = await API.delete(`/api/v1/admin/plats/${platId}`);
+        const response = await API.delete(`/admin/plats/${platId}`);
         return response.data;
     } catch (error) {
         console.error("Erreur lors de la suppression du plat:", error);

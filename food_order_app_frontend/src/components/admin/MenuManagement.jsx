@@ -10,7 +10,7 @@ const MenuManagement = ({ restaurantId }) => {
         description: '',
         prix: '',
         disponible: true,
-        photo_url: ''
+        image: null // Changé de photo_url à image pour stocker le fichier
     });
     const [editingPlat, setEditingPlat] = useState(null);
 
@@ -42,7 +42,7 @@ const MenuManagement = ({ restaurantId }) => {
             };
             const createdPlat = await createPlat(platData);
             setPlats([...plats, createdPlat]);
-            setNewPlat({ nom: '', description: '', prix: '', disponible: true, photo_url: '' });
+            setNewPlat({ nom: '', description: '', prix: '', disponible: true, image: null });
         } catch (e) {
             setError(e.message || 'Erreur lors de l\'ajout du plat.');
         }
@@ -78,8 +78,8 @@ const MenuManagement = ({ restaurantId }) => {
 
     // Gérer les changements dans le formulaire
     const handleInputChange = (e, isEditing = false) => {
-        const { name, value, type, checked } = e.target;
-        const val = type === 'checkbox' ? checked : value;
+        const { name, value, type, checked, files } = e.target;
+        const val = type === 'checkbox' ? checked : type === 'file' ? files[0] : value;
         if (isEditing) {
             setEditingPlat({ ...editingPlat, [name]: val });
         } else {
@@ -133,14 +133,17 @@ const MenuManagement = ({ restaurantId }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">URL de la photo</label>
+                        <label className="block text-sm font-medium text-gray-700">Photo</label>
                         <input
-                            type="text"
-                            name="photo_url"
-                            value={newPlat.photo_url}
+                            type="file"
+                            name="image"
+                            accept="image/*"
                             onChange={handleInputChange}
                             className="mt-1 block w-full p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                         />
+                        {newPlat.image && (
+                            <p className="mt-2 text-sm text-gray-600">Fichier sélectionné : {newPlat.image.name}</p>
+                        )}
                     </div>
                     <div className="flex items-center">
                         <input
@@ -208,14 +211,20 @@ const MenuManagement = ({ restaurantId }) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700">URL de la photo</label>
+                                                <label className="block text-sm font-medium text-gray-700">Photo</label>
                                                 <input
-                                                    type="text"
-                                                    name="photo_url"
-                                                    value={editingPlat.photo_url || ''}
+                                                    type="file"
+                                                    name="image"
+                                                    accept="image/*"
                                                     onChange={(e) => handleInputChange(e, true)}
                                                     className="mt-1 block w-full p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                                 />
+                                                {editingPlat.image && (
+                                                    <p className="mt-2 text-sm text-gray-600">Fichier sélectionné : {editingPlat.image.name}</p>
+                                                )}
+                                                {editingPlat.photo_url && !editingPlat.image && (
+                                                    <p className="mt-2 text-sm text-gray-600">Photo actuelle : <a href={editingPlat.photo_url} target="_blank" rel="noopener noreferrer">Voir</a></p>
+                                                )}
                                             </div>
                                             <div className="flex items-center">
                                                 <input
