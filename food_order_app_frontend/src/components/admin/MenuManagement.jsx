@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchMenu, createPlat, updatePlat, deletePlat } from '../../api/menuApi';
-
+const API_BASE_URL = 'http://localhost:5000'; 
 const MenuManagement = ({ restaurantId }) => {
     const [plats, setPlats] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -21,7 +21,21 @@ const MenuManagement = ({ restaurantId }) => {
             setError(null);
             try {
                 const data = await fetchMenu(restaurantId);
-                setPlats(data.plats || []);
+                const fetchedPlats = data.plats || [];
+                setPlats(fetchedPlats);
+
+                // --- ✅ LOG CONSOLE AJOUTÉ ICI ✅ ---
+                console.log('--- URLS des images des plats chargés ---');
+                fetchedPlats.forEach(plat => {
+                    if (plat.photo_url) {
+                        console.log(`Plat: ${plat.nom}, URL: ${plat.photo_url}`);
+                    } else {
+                        console.log(`Plat: ${plat.nom}, URL: Aucune photo.`);
+                    }
+                });
+                console.log('----------------------------------------');
+                // ----------------------------------------
+
             } catch (e) {
                 setError(e.message || 'Impossible de charger les plats.');
             } finally {
@@ -94,7 +108,7 @@ const MenuManagement = ({ restaurantId }) => {
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-indigo-700">Gestion des Plats</h2>
 
-            {/* Formulaire d'ajout */}
+            {/* Formulaire d'ajout (inchangé) */}
             <form onSubmit={handleAddPlat} className="bg-gray-50 p-6 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold mb-4">Ajouter un nouveau plat</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -164,7 +178,7 @@ const MenuManagement = ({ restaurantId }) => {
                 </button>
             </form>
 
-            {/* Liste des plats */}
+            {/* Liste des plats (inchangée) */}
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold mb-4">Liste des plats</h3>
                 {plats.length === 0 ? (
@@ -258,10 +272,15 @@ const MenuManagement = ({ restaurantId }) => {
                                         <div>
                                             <h4 className="text-lg font-medium">{plat.nom}</h4>
                                             <p className="text-gray-600">{plat.description || 'Aucune description'}</p>
-                                            <p className="text-gray-800 font-semibold">{plat.prix} €</p>
+                                            <p className="text-gray-800 font-semibold">{plat.prix} CFA</p>
                                             <p className="text-sm">{plat.disponible ? 'Disponible' : 'Indisponible'}</p>
-                                            {plat.photo_url && (
-                                                <img src={plat.photo_url} alt={plat.nom} className="w-20 h-20 object-cover mt-2 rounded" />
+                                           {plat.photo_url && (
+                                                <img 
+                                                    // 1. Concaténez l'URL de base de l'API avec l'URL relative du plat
+                                                    src={`${API_BASE_URL}${plat.photo_url}`} 
+                                                    alt={plat.nom} 
+                                                    className="w-20 h-20 object-cover mt-2 rounded" 
+                                                />
                                             )}
                                         </div>
                                         <div className="space-x-2">

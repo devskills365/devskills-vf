@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 const formatPrice = (price) => {
     return new Intl.NumberFormat('fr-FR', {
         style: 'currency',
-        currency: 'EUR',
+        currency: 'CFA',
     }).format(price);
 };
 
@@ -129,7 +129,7 @@ const CartDetail = () => {
                     to="/checkout" 
                     className="w-full block text-center px-4 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150"
                 >
-                    Passer au Paiement
+                    Valider la commande
                 </Link>
             </div>
         </div>

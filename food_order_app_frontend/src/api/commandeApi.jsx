@@ -8,7 +8,7 @@ const API = axios.create({
 
 /**
  * Envoie la commande au Backend.
- * @param {object} data - Contient restaurant_id, client_nom, client_telephone, mode_recuperation, et panier.
+ * @param {object} data 
  */
 export const postCommande = async (data) => {
     try {

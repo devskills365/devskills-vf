@@ -18,7 +18,11 @@ from werkzeug.utils import secure_filename # Ajouter l'import
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api/v1/admin')
 
+import os
+from flask import current_app
 
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads', 'plats')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Fonction utilitaire pour sérialiser un Plat
 def plat_to_dict(plat):
@@ -36,35 +40,41 @@ def plat_to_dict(plat):
 # api/admin.py (Remplacer la route existante)
 
 # Endpoint : POST /api/v1/admin/plats
+
+
 @admin_bp.route('/plats', methods=['POST'])
 def create_plat():
-    # Dans Flask, pour les uploads de fichiers, les données de formulaire sont dans request.form
-    # et les fichiers dans request.files
     data = request.form
-    image_file = request.files.get('image') # Nom du champ de fichier
+    image_file = request.files.get('image')
 
-    # 1. Validation des données requises
+    # Vérification minimale
     if not all(k in data for k in ('nom', 'prix', 'restaurant_id')):
-        return jsonify({"message": "Données de plat manquantes (nom, prix, restaurant_id sont requis)."}), 400
-    
+        return jsonify({"message": "Champs requis : nom, prix, restaurant_id"}), 400
+
     restaurant_id = data['restaurant_id']
     prix_str = data['prix']
 
     restaurant = Restaurant.query.get(restaurant_id)
     if not restaurant:
-        return jsonify({"message": f"Erreur d'autorisation : Le Restaurant ID {restaurant_id} n'existe pas."}), 401
-    # Gestion de l'upload d'image
-    photo_url = data.get('photo_url') 
+        return jsonify({"message": f"Restaurant ID {restaurant_id} introuvable."}), 404
+
+    photo_url = None
     if image_file:
+        # Sécuriser le nom de fichier
         filename = secure_filename(image_file.filename)
-        # Pour l'exemple, nous construisons une URL simulée
-        photo_url = f"/uploads/plats/{filename}" 
-    # 3. Création de l'objet Plat
+        # Créer un chemin complet de stockage
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        # Sauvegarder le fichier sur le disque
+        image_file.save(filepath)
+        # Construire une URL accessible depuis le frontend
+        photo_url = f"/static/uploads/plats/{filename}"
+
+    # Création du plat
     try:
         prix_float = float(prix_str)
         disponible_str = data.get('disponible', 'true').lower()
         disponible_bool = disponible_str in ('true', '1', 'oui')
-        
+
         new_plat = Plat(
             nom=data['nom'],
             prix=prix_float,
@@ -73,17 +83,18 @@ def create_plat():
             photo_url=photo_url,
             disponible=disponible_bool
         )
-        
+
         db.session.add(new_plat)
         db.session.commit()
-        
-        return jsonify({"message": "Plat créé avec succès.", "plat": plat_to_dict(new_plat)}), 201
-    except ValueError:
-        db.session.rollback()
-        return jsonify({"message": "Le prix doit être un nombre valide."}), 400
+
+        return jsonify({
+            "message": "Plat créé avec succès.",
+            "plat": plat_to_dict(new_plat)
+        }), 201
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Erreur serveur lors de la création du plat: {e}"}), 500
+        return jsonify({"message": f"Erreur serveur : {e}"}), 500
 
 
 
@@ -101,20 +112,52 @@ def get_plats(restaurant_id):
 
 
 
+# Mettre à jour un plat existant (avec ou sans image)
 @admin_bp.route('/plats/<int:plat_id>', methods=['PUT'])
 def update_plat(plat_id):
     plat = Plat.query.get_or_404(plat_id)
-    data = request.get_json()
     
-    # Mettre à jour les champs
-    plat.nom = data.get('nom', plat.nom)
-    plat.description = data.get('description', plat.description)
-    plat.prix = data.get('prix', plat.prix)
-    plat.photo_url = data.get('photo_url', plat.photo_url)
-    plat.disponible = data.get('disponible', plat.disponible)
+    # 1. Lire les données de formulaire pour les champs texte
+    data = request.form 
+    
+    # 2. Récupérer l'image potentielle
+    image_file = request.files.get('image')
+
+    # Mettre à jour les champs texte (utiliser .get pour éviter les KeyErrors si un champ n'est pas fourni)
+    if 'nom' in data:
+        plat.nom = data['nom']
+    if 'description' in data:
+        plat.description = data['description']
+    if 'prix' in data:
+        try:
+            plat.prix = float(data['prix'])
+        except ValueError:
+            return jsonify({"message": "Le prix doit être un nombre valide."}), 400
+    if 'disponible' in data:
+        disponible_str = data.get('disponible', 'true').lower()
+        plat.disponible = disponible_str in ('true', '1', 'oui')
+
+
+    # 3. Gérer le téléchargement de la NOUVELLE image
+    if image_file:
+        try:
+            filename = secure_filename(image_file.filename)
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            image_file.save(filepath)
+            
+            # Mise à jour de l'URL du plat
+            plat.photo_url = f"/static/uploads/plats/{filename}"
+            
+            # 💡 Optionnel : Supprimer l'ancienne image du disque si elle existe
+        except Exception as e:
+            return jsonify({"message": f"Erreur lors de l'enregistrement du fichier : {e}"}), 500
+
 
     db.session.commit()
     return jsonify({"message": "Plat mis à jour avec succès.", "plat": plat_to_dict(plat)}), 200
+
+
+
 
 # DELETE: Supprimer un plat
 @admin_bp.route('/plats/<int:plat_id>', methods=['DELETE'])

@@ -9,7 +9,7 @@ const CartSummary = () => {
     // Formater le total
     const formattedTotal = new Intl.NumberFormat('fr-FR', {
         style: 'currency',
-        currency: 'EUR',
+        currency: 'CFA',
     }).format(total);
 
     // N'afficher le composant que si le panier n'est pas vide

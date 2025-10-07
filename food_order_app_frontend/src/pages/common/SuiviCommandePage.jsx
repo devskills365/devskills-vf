@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa6'; // <-- Import de l'icône de retour
-
+import { useCart } from '../../context/CartContext';
 const SuiviCommandePage = () => {
-    // ... (déclaration des états et des hooks) ...
+ const { restaurantId: contextRestaurantId } = useCart();
     const location = useLocation();
     const initialCode = location.state?.code_commande;
     
@@ -16,9 +16,6 @@ const SuiviCommandePage = () => {
     
     const navigate = useNavigate();
 
-    // ID du restaurant pour le retour au menu. 
-    // IMPORTANT : Remplacer 3 par l'ID réel si stocké, ou par '/' pour l'accueil.
-    const RESTAURANT_ID = 3; 
 
     // Logique de soumission du formulaire de suivi
     const handleFormSubmit = (e) => {
@@ -39,7 +36,7 @@ const SuiviCommandePage = () => {
     // Fonction de retour au menu
     const handleGoBackToMenu = () => {
         // Redirige vers la page du menu avec l'ID du restaurant
-        navigate(`/menu/${RESTAURANT_ID}`); 
+        navigate(`/menu/${contextRestaurantId}`); 
     };
 
     // SCÉNARIO 1 : AFFICHAGE DU CODE DE SUIVI LORS DE LA REDIRECTION (POST-COMMANDE)

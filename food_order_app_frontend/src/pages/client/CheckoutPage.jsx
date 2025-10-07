@@ -137,6 +137,22 @@ const CheckoutPage = () => {
                                 disabled={loading}
                             />
                         </div>
+
+                          <div>
+                            <label htmlFor="client_telephone" className="block text-sm font-medium text-gray-700">Spécificité sur le plat</label>
+                            <input 
+                                type="text" 
+                                name="client_telephone" 
+                                id="client_telephone" 
+                                value={formData.client_telephone}
+                                onChange={handleChange}
+                
+                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                                disabled={loading}
+                            />
+                        </div>
+
+
                         <div>
                             <label htmlFor="mode_recuperation" className="block text-sm font-medium text-gray-700">Mode de Récupération</label>
                             <select
@@ -162,7 +178,7 @@ const CheckoutPage = () => {
                             }`}
                             disabled={loading}
                         >
-                            {loading ? 'Traitement...' : `Confirmer & Payer ${formatPrice(total)}`}
+                            {loading ? 'Traitement...' : `Confirmer ${formatPrice(total)}`}
                         </button>
                     </form>
                 </div>
